@@ -8,11 +8,32 @@
 </head>
 <body>
 
-  <h1>Responsive Memory Game</h1>
-  <div id="game-board"></div>
-  <div id="level-up"></div>
-  <button id="restart-button">Restart Game</button>
+  <h1 class="title">Memory Game</h1>
 
+<div class="stats">
+    <div class="stat">Time: <span id="time">0</span>s</div>
+    <div class="stat">Moves: <span id="moves">0</span></div>
+
+    <!-- ★ LEVEL DROPDOWN ADDED -->
+    <select id="levelSelect" onchange="changeLevel()">
+        <option value="easy">Easy</option>
+        <option value="medium">Medium</option>
+        <option value="hard">Hard</option>
+    </select>
+
+    <button id="restartBtn">Restart</button>
+</div>
+
+<div class="game-container" id="gameBoard"></div>
+
+<div class="win-modal" id="winModal">
+    <div class="win-box">
+        <h2>🎉 You Win!</h2>
+        <p>Time: <span id="finalTime"></span>s</p>
+        <p>Moves: <span id="finalMoves"></span></p>
+        <button onclick="restartGame()">Play Again</button>
+    </div>
+</div>
   <script src="memory.js"></script>
 
 </body>
