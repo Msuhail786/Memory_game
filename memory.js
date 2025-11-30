@@ -1,77 +1,124 @@
-const levels = [
-      ['A', 'B', 'C', 'D', 'E', 'F'], // Level 1: Alphabets
-      ['🐻', '🐶', '🐱', '🦁','🐯', '🐼', '🐸', '🐵', '🦊'], // Level 2: Animals
-      ['🪻', '🌺', '🏵️', '💮', '🌺', '🥀',   '🌹', '🌻', '🌼', '🌸', '🌷', '💐'] // Level 3: Flowers
-    ];
+const allSymbols = ["🍎", "⭐", "🎵", "⚡", "🔥", "🌙", "🍀", "💎", "🐱", "🚗", "🎮"];
 
-    let currentLevel = 0;
-    let cards = [];
-    let firstCard = null;
-    let lock = false;
+let level = "easy";
 
-    function startLevel() {
-      levelUpText.textContent = '';
-      cards = [...levels[currentLevel], ...levels[currentLevel]];
-      cards = cards.sort(() => 0.5 - Math.random());
-      board.innerHTML = '';
+// Define pairs per level
+const levelConfig = {
+    easy: 6,
+    medium: 8,
+    hard: 10
+};
 
-      cards.forEach(symbol => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.dataset.symbol = symbol;
-        card.addEventListener('click', () => revealCard(card));
-        board.appendChild(card);
-      });
+let cardsArray = [];
+let gameBoard = document.getElementById("gameBoard");
+let moves = 0, matchedCount = 0, firstCard = null, lockBoard = false;
+let timer = 0, interval = null;
 
-      firstCard = null;
-      lock = false;
-    }
+document.getElementById("restartBtn").onclick = restartGame;
 
-    function revealCard(card) {
-      if (lock || card.classList.contains('revealed')) return;
-      card.textContent = card.dataset.symbol;
-      card.classList.add('revealed');
+/* ---------------- LEVEL CHANGE ---------------- */
+function changeLevel() {
+    level = document.getElementById("levelSelect").value;
+    restartGame();
+}
 
-      if (!firstCard) {
-        firstCard = card;
-      } else {
-        if (firstCard.dataset.symbol === card.dataset.symbol) {
-          firstCard = null;
-          checkLevelUp();
-        } else {
-          lock = true;
-          setTimeout(() => {
-            firstCard.textContent = '';
-            card.textContent = '';
-            firstCard.classList.remove('revealed');
-            card.classList.remove('revealed');
-            firstCard = null;
-            lock = false;
-          }, 800);
-        }
-      }
-    }
+/* ---------------- SHUFFLE ---------------- */
+function shuffle(array) {
+    return array.sort(() => Math.random() - 0.5);
+}
 
-    function checkLevelUp() {
-      const remaining = document.querySelectorAll('.card:not(.revealed)');
-      if (remaining.length === 0) {
-        setTimeout(() => {
-          if (currentLevel < levels.length - 1) {
-            currentLevel++;
-            levelUpText.textContent = `Level ${currentLevel + 1} Unlocked!`;
-            setTimeout(() => {
-              startLevel();
-            }, 1500);
-          } else {
-            levelUpText.textContent = 'You Won! All Levels Completed!';
-          }
-        }, 500);
-      }
-    }
+/* ---------------- TIMER ---------------- */
+function startTimer() {
+    interval = setInterval(() => {
+        timer++;
+        document.getElementById("time").textContent = timer;
+    }, 1000);
+}
 
-    restartButton.addEventListener('click', () => {
-      currentLevel = 0;
-      startLevel();
+/* ---------------- GENERATE CARDS ---------------- */
+function generateCards() {
+    const pairs = levelConfig[level];
+
+    // Select symbols based on level
+    const selected = allSymbols.slice(0, pairs);
+    cardsArray = [...selected, ...selected];
+
+    gameBoard.style.gridTemplateColumns =
+        level === "hard" ? "repeat(5, 1fr)" :
+        level === "medium" ? "repeat(4, 1fr)" :
+        "repeat(4, 1fr)";
+
+    gameBoard.innerHTML = "";
+    shuffle(cardsArray).forEach(symbol => {
+        let card = document.createElement("div");
+        card.classList.add("card");
+        card.innerHTML = `
+            <div class="face front"></div>
+            <div class="face back">${symbol}</div>
+        `;
+        card.onclick = () => flipCard(card, symbol);
+        gameBoard.appendChild(card);
     });
+}
 
-    startLevel();
+/* ---------------- FLIP CARD ---------------- */
+function flipCard(card, symbol) {
+    if (lockBoard || card.classList.contains("flip")) return;
+
+    if (moves === 0 && timer === 0) startTimer();
+
+    card.classList.add("flip");
+
+    if (!firstCard) {
+        firstCard = { card, symbol };
+        return;
+    }
+
+    moves++;
+    document.getElementById("moves").textContent = moves;
+
+    if (firstCard.symbol === symbol) {
+        matchedCount++;
+        firstCard = null;
+
+        const totalPairs = levelConfig[level];
+        if (matchedCount === totalPairs) winGame();
+
+    } else {
+        lockBoard = true;
+        setTimeout(() => {
+            card.classList.remove("flip");
+            firstCard.card.classList.remove("flip");
+            firstCard = null;
+            lockBoard = false;
+        }, 800);
+    }
+}
+
+/* ---------------- WIN GAME ---------------- */
+function winGame() {
+    clearInterval(interval);
+    document.getElementById("finalMoves").textContent = moves;
+    document.getElementById("finalTime").textContent = timer;
+    document.getElementById("winModal").style.display = "flex";
+}
+
+/* ---------------- RESTART ---------------- */
+function restartGame() {
+    matchedCount = 0;
+    moves = 0;
+    timer = 0;
+    firstCard = null;
+    lockBoard = false;
+
+    clearInterval(interval);
+    interval = null;
+
+    document.getElementById("moves").textContent = "0";
+    document.getElementById("time").textContent = "0";
+    document.getElementById("winModal").style.display = "none";
+
+    generateCards();
+}
+
+generateCards();
